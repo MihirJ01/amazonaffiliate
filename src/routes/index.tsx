@@ -63,8 +63,9 @@ function Index() {
 
       <main>
         {/* Hero */}
-        <section className="container-edge grid items-center gap-12 overflow-hidden py-16 lg:grid-cols-2 lg:py-24">
-          <div className="motion-reveal">
+        <section className="container-edge relative grid min-h-[calc(100svh-4.5rem)] items-center gap-8 overflow-hidden py-8 lg:grid-cols-2 lg:gap-10 lg:py-10">
+          <div className="hero-glow animate-orbit-glow pointer-events-none absolute -left-24 top-1/3 size-72 rounded-full" />
+          <div className="relative motion-reveal">
             <div className="flex items-center gap-4 motion-delay-1">
               <span className="h-px w-8 bg-foreground" />
               <span className="eyebrow">Electronics &amp; Home · Curated</span>
@@ -82,7 +83,7 @@ function Index() {
               <Link
                 to="/shop"
                 search={{}}
-                className="inline-flex items-center gap-3 rounded-full bg-primary py-4 pl-6 pr-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                className="interactive-lift inline-flex items-center gap-3 rounded-full bg-primary py-4 pl-6 pr-3 text-sm font-medium text-primary-foreground hover:interactive-lift-hover"
               >
                 Shop the collection
                 <span className="flex size-7 items-center justify-center rounded-full bg-background/15">
@@ -92,7 +93,7 @@ function Index() {
               <Link
                 to="/shop"
                 search={{ deal: true }}
-                className="inline-flex items-center rounded-full border border-border px-7 py-4 text-sm font-medium transition-colors hover:bg-accent"
+                className="interactive-lift inline-flex items-center rounded-full border border-border px-7 py-4 text-sm font-medium hover:interactive-lift-hover"
               >
                 View today's deals
               </Link>
@@ -110,16 +111,16 @@ function Index() {
             </dl>
           </div>
 
-          <div className="motion-reveal motion-delay-2 relative">
-            <div className="aspect-[4/5] overflow-hidden rounded-3xl bg-muted">
+          <div className="motion-reveal motion-delay-2 relative mx-auto w-full max-w-[34rem] lg:ml-auto">
+            <div className="animate-float-artwork h-[min(56svh,32rem)] overflow-hidden rounded-3xl bg-muted shadow-[0_32px_80px_-36px_rgba(0,0,0,0.45)] lg:h-[min(66svh,40rem)]">
               <img
                 src={hero.image}
                 alt="Featured tech"
-                className="size-full object-cover"
+                className="size-full object-cover transition-transform duration-[1800ms] ease-out hover:scale-105"
                 fetchPriority="high"
               />
             </div>
-            <div className="absolute -bottom-6 left-0 max-w-[240px] rounded-2xl bg-background p-5 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.35)] transition-transform duration-500 hover:-translate-y-1">
+            <div className="absolute -bottom-4 left-3 max-w-[240px] rounded-2xl border border-border/60 bg-background/95 p-5 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.35)] backdrop-blur transition-transform duration-500 hover:-translate-y-1 sm:-bottom-6 sm:left-0">
               <p className="eyebrow">This week</p>
               <p className="mt-1 font-semibold tracking-tight">{hero.name}</p>
               <p className="text-sm text-muted-foreground">from ${hero.price.toLocaleString()}</p>
