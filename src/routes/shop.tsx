@@ -2,8 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
-import { products } from "@/data/products";
-import { useAffiliateLinks } from "@/hooks/use-affiliate-links";
+import { useProducts } from "@/hooks/use-products";
 
 type ShopSearch = { category?: string; deal?: boolean };
 
@@ -41,7 +40,7 @@ const filters = [
 
 function Shop() {
   const { category, deal } = Route.useSearch();
-  const affiliateLinks = useAffiliateLinks();
+  const { data: products = [], isLoading } = useProducts();
   const list = products.filter((p) => (!category || p.category === category) && (!deal || p.deal));
 
   const activeLabel = deal ? "Deals" : (category ?? "All");
@@ -79,11 +78,19 @@ function Shop() {
           })}
         </div>
 
-        <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((p) => (
-            <ProductCard key={p.id} product={p} affiliateUrl={affiliateLinks.get(p.id)} />
-          ))}
-        </div>
+        {isLoading ? (
+          <p className="mt-14 text-muted-foreground">Loading products…</p>
+        ) : (
+          <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+            {list.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        )}
+        {!isLoading && list.length === 0 && (
+          <div className="mt-14 rounded-2xl border border-dashed border-border bg-secondary/40 p-8 text-center">
+            <h2 className="text-xl font-semibold">Products are being prepared</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Check back soon for curated product recommendations.</p>
+          </div>
+        )}
       </main>
       <SiteFooter />
     </div>

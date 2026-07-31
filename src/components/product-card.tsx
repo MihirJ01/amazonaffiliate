@@ -1,13 +1,7 @@
 import { Star } from "lucide-react";
-import type { Product } from "@/data/products";
+import type { Product } from "@/lib/products";
 
-export function ProductCard({
-  product,
-  affiliateUrl,
-}: {
-  product: Product;
-  affiliateUrl?: string;
-}) {
+export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group motion-reveal flex flex-col">
       <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted">
@@ -44,11 +38,7 @@ export function ProductCard({
         <span>({product.reviews.toLocaleString()} reviews)</span>
       </div>
       <a
-        href={
-          affiliateUrl ||
-          product.affiliateUrl ||
-          `https://www.amazon.com/s?k=${encodeURIComponent(product.name)}`
-        }
+        href={product.affiliateUrl || `https://www.amazon.com/s?k=${encodeURIComponent(product.name)}`}
         target="_blank"
         rel="noopener noreferrer nofollow"
         className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] transition-colors hover:bg-primary hover:text-primary-foreground"

@@ -2,6 +2,8 @@
 
 A fast, curated storefront for featuring Amazon products across electronics and home categories. Visitors browse editorial product selections and follow outbound Amazon links; there is no customer account or checkout flow in this app.
 
+For a non-technical, step-by-step guide to using the live site and admin link manager, see [FATHER_GUIDE.md](FATHER_GUIDE.md).
+
 > **Amazon disclosure:** Update the footer and site copy with your own Associates disclosure before launch. Use only approved Amazon Associates links and comply with the [Amazon Associates Operating Agreement](https://affiliate-program.amazon.com/help/operating/agreement).
 
 ## What is included
