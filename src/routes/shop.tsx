@@ -82,13 +82,17 @@ function Shop() {
           <p className="mt-14 text-muted-foreground">Loading products…</p>
         ) : (
           <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((p) => <ProductCard key={p.id} product={p} />)}
+            {list.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
           </div>
         )}
         {!isLoading && list.length === 0 && (
           <div className="mt-14 rounded-2xl border border-dashed border-border bg-secondary/40 p-8 text-center">
             <h2 className="text-xl font-semibold">Products are being prepared</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Check back soon for curated product recommendations.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Check back soon for curated product recommendations.
+            </p>
           </div>
         )}
       </main>

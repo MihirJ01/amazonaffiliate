@@ -55,13 +55,41 @@ function toProduct(row: ProductRow): Product {
 
 export async function getProducts(): Promise<Product[]> {
   if (!supabase) return [];
-  const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false });
   if (error) throw error;
   return (data as ProductRow[]).map(toProduct);
 }
 
 export async function saveProductAffiliateLink(productId: string, affiliateUrl: string) {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const { error } = await supabase.from("products").update({ affiliate_url: affiliateUrl }).eq("id", productId);
+  const { error } = await supabase
+    .from("products")
+    .update({ affiliate_url: affiliateUrl })
+    .eq("id", productId);
+  if (error) throw error;
+}
+
+export type ProductInput = Omit<Product, "id">;
+
+export async function saveProduct(product: ProductInput) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("products").insert({
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    subcategory: product.subcategory,
+    price: product.price,
+    old_price: product.oldPrice ?? null,
+    rating: product.rating,
+    reviews: product.reviews,
+    deal: product.deal,
+    featured: product.featured,
+    image: product.image,
+    blurb: product.blurb,
+    affiliate_url: product.affiliateUrl,
+  });
   if (error) throw error;
 }

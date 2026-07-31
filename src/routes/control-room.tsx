@@ -1,11 +1,27 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { LockKeyhole, LogOut, Plus, ShieldCheck } from "lucide-react";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { ExternalLink, LockKeyhole, LogOut, Plus, ShieldCheck } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
-import { products } from "@/data/products";
-import { saveAffiliateLink } from "@/lib/affiliate-links";
+import { ProductCard } from "@/components/product-card";
+import { useProducts } from "@/hooks/use-products";
+import { type Product, type ProductInput, saveProduct } from "@/lib/products";
 import { supabase } from "@/lib/supabase";
 
 const SESSION_KEY = "affiliate-admin-session";
+const emptyProduct: ProductInput = {
+  name: "",
+  brand: "",
+  category: "Electronics",
+  subcategory: "",
+  price: 0,
+  rating: 4.5,
+  reviews: 0,
+  deal: false,
+  featured: true,
+  image: "",
+  blurb: "",
+  affiliateUrl: "",
+};
 
 export const Route = createFileRoute("/control-room")({
   head: () => ({
@@ -16,20 +32,32 @@ export const Route = createFileRoute("/control-room")({
 
 function ControlRoom() {
   const [signedIn, setSignedIn] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
-  const [added, setAdded] = useState(0);
-  const [productId, setProductId] = useState(products[0].id);
-  const [affiliateUrl, setAffiliateUrl] = useState("");
-  const [linkMessage, setLinkMessage] = useState("");
-  const [savingLink, setSavingLink] = useState(false);
+  const [form, setForm] = useState<ProductInput>(emptyProduct);
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: products = [], isLoading } = useProducts();
 
   useEffect(() => setSignedIn(sessionStorage.getItem(SESSION_KEY) === "active"), []);
+  const setField = <K extends keyof ProductInput>(key: K, value: ProductInput[K]) =>
+    setForm((current) => ({ ...current, [key]: value }));
 
-  function signIn(event: FormEvent) {
+  async function signIn(event: FormEvent) {
     event.preventDefault();
-    // Demo-only gateway: replace with a server-side session check before publishing.
-    if (passcode !== "admin-demo") {
+    setError("");
+    if (supabase) {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password: passcode,
+      });
+      if (authError) {
+        setError("Your Supabase admin email or password is not recognised.");
+        return;
+      }
+    } else if (passcode !== "admin-demo") {
       setError("That passcode is not recognised.");
       return;
     }
@@ -37,153 +65,286 @@ function ControlRoom() {
     setSignedIn(true);
   }
 
-  async function saveLink(event: FormEvent) {
+  async function submitProduct(event: FormEvent) {
     event.preventDefault();
     if (!supabase) {
-      setLinkMessage("Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY before saving links.");
+      setMessage("Connect Supabase in Vercel before saving products.");
       return;
     }
-    setSavingLink(true);
-    setLinkMessage("");
+    setSaving(true);
+    setMessage("");
     try {
-      await saveAffiliateLink(productId, affiliateUrl);
-      setAffiliateUrl("");
-      setLinkMessage("Affiliate link saved to Supabase.");
+      await saveProduct(form);
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+      setForm(emptyProduct);
+      setMessage("Product saved. It will now appear on the public storefront.");
     } catch {
-      setLinkMessage("Could not save the link. Check your Supabase table and access policies.");
+      setMessage(
+        "Product could not be saved. Check Supabase database policies and setup instructions.",
+      );
     } finally {
-      setSavingLink(false);
+      setSaving(false);
     }
   }
 
-  if (!signedIn) {
-    return <Login passcode={passcode} setPasscode={setPasscode} error={error} onSubmit={signIn} />;
-  }
+  if (!signedIn)
+    return (
+      <Login
+        email={adminEmail}
+        setEmail={setAdminEmail}
+        passcode={passcode}
+        setPasscode={setPasscode}
+        error={error}
+        onSubmit={signIn}
+        useSupabase={Boolean(supabase)}
+      />
+    );
+  const preview: Product = { ...form, id: "preview-product" };
 
   return (
-    <main className="min-h-screen bg-secondary/40 p-5 sm:p-10">
-      <div className="mx-auto max-w-6xl">
-        <header className="flex items-center justify-between border-b border-border pb-6">
+    <main className="min-h-screen bg-secondary/40 p-4 sm:p-8">
+      <div className="mx-auto max-w-7xl">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
           <div>
             <p className="eyebrow">Private workspace</p>
             <h1 className="mt-2 text-3xl font-bold">Affiliate control room</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Add exactly what visitors will see: product image, name, price, rating and Amazon
+              link.
+            </p>
           </div>
-          <button
-            onClick={() => {
-              sessionStorage.removeItem(SESSION_KEY);
-              setSignedIn(false);
-            }}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium"
-          >
-            <LogOut className="size-4" /> Sign out
-          </button>
+          <div className="flex gap-2">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium"
+            >
+              <ExternalLink className="size-4" /> View storefront
+            </Link>
+            <button
+              onClick={() => {
+                supabase?.auth.signOut();
+                sessionStorage.removeItem(SESSION_KEY);
+                setSignedIn(false);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium"
+            >
+              <LogOut className="size-4" /> Sign out
+            </button>
+          </div>
         </header>
-
-        <section className="mt-8 grid gap-5 md:grid-cols-3">
-          <Metric label="Live listings" value={String(products.length + added)} />
+        <section className="mt-8 grid gap-5 sm:grid-cols-3">
+          <Metric label="Listed products" value={String(products.length)} />
           <Metric
-            label="Featured picks"
-            value={String(products.filter((p) => p.featured).length)}
+            label="Featured on home"
+            value={String(products.filter((product) => product.featured).length)}
           />
-          <Metric label="Tracked links" value="Add links" />
+          <Metric
+            label="Connected Amazon links"
+            value={String(products.filter((product) => product.affiliateUrl).length)}
+          />
         </section>
-
-        <section className="mt-8 rounded-2xl border border-border bg-background p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold">Product listings</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Use your Amazon Associates URL for every product.
-              </p>
+        <section className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
+          <form
+            onSubmit={submitProduct}
+            className="rounded-2xl border border-border bg-background p-5 shadow-sm sm:p-7"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <Plus className="size-4" />
+              </span>
+              <div>
+                <p className="eyebrow">New listing</p>
+                <h2 className="text-xl font-semibold">Add a real product</h2>
+              </div>
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Product name"
+                value={form.name}
+                onChange={(value) => setField("name", value)}
+                required
+              />
+              <Field
+                label="Brand"
+                value={form.brand}
+                onChange={(value) => setField("brand", value)}
+              />
+              <Field
+                label="Price (USD)"
+                type="number"
+                value={String(form.price)}
+                onChange={(value) => setField("price", Number(value))}
+                required
+              />
+              <Field
+                label="Rating (0–5)"
+                type="number"
+                value={String(form.rating)}
+                onChange={(value) => setField("rating", Number(value))}
+                required
+              />
+              <Field
+                label="Number of reviews"
+                type="number"
+                value={String(form.reviews)}
+                onChange={(value) => setField("reviews", Number(value))}
+              />
+              <Field
+                label="Category"
+                value={form.category}
+                onChange={(value) => setField("category", value)}
+                required
+              />
+              <Field
+                label="Subcategory"
+                value={form.subcategory}
+                onChange={(value) => setField("subcategory", value)}
+              />
+              <Field
+                label="Image URL"
+                type="url"
+                value={form.image}
+                onChange={(value) => setField("image", value)}
+                required
+                className="sm:col-span-2"
+              />
+              <Field
+                label="Amazon Associates link"
+                type="url"
+                value={form.affiliateUrl}
+                onChange={(value) => setField("affiliateUrl", value)}
+                required
+                className="sm:col-span-2"
+              />
+              <label className="sm:col-span-2">
+                <span className="text-sm font-medium">Short description</span>
+                <textarea
+                  value={form.blurb}
+                  onChange={(event) => setField("blurb", event.target.value)}
+                  className="mt-2 min-h-24 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </label>
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={form.featured}
+                  onChange={(event) => setField("featured", event.target.checked)}
+                />{" "}
+                Show on homepage
+              </label>
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={form.deal}
+                  onChange={(event) => setField("deal", event.target.checked)}
+                />{" "}
+                Mark as deal
+              </label>
             </div>
             <button
-              onClick={() => setAdded((value) => value + 1)}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
+              disabled={saving}
+              className="mt-6 rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
             >
-              <Plus className="size-4" /> New product
+              {saving ? "Saving…" : "Save product"}
             </button>
-          </div>
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full min-w-[650px] text-left text-sm">
-              <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="pb-3">Product</th>
-                  <th className="pb-3">Category</th>
-                  <th className="pb-3">Price</th>
-                  <th className="pb-3">Affiliate link</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.slice(0, 8).map((product) => (
-                  <tr key={product.id} className="border-b border-border/70">
-                    <td className="py-4 font-medium">{product.name}</td>
-                    <td className="py-4 text-muted-foreground">{product.category}</td>
-                    <td className="py-4">${product.price}</td>
-                    <td className="py-4">
-                      <span className="rounded-full bg-secondary px-3 py-1 text-xs">
-                        {product.affiliateUrl ? "Connected" : "Needs URL"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-        <section className="mt-8 rounded-2xl border border-border bg-background p-6 shadow-sm">
-          <p className="eyebrow">Supabase link manager</p>
-          <h2 className="mt-2 text-xl font-semibold">Save an Amazon Associates link</h2>
-          <form
-            onSubmit={saveLink}
-            className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto]"
-          >
-            <select
-              value={productId}
-              onChange={(event) => setProductId(event.target.value)}
-              className="rounded-xl border border-input bg-background px-4 py-3 text-sm"
-            >
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </select>
-            <input
-              value={affiliateUrl}
-              onChange={(event) => setAffiliateUrl(event.target.value)}
-              type="url"
-              required
-              placeholder="https://www.amazon.com/.../?tag=YOUR_TAG-20"
-              className="rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              disabled={savingLink}
-              className="rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
-            >
-              {savingLink ? "Saving…" : "Save link"}
-            </button>
+            {message && <p className="mt-3 text-sm text-muted-foreground">{message}</p>}
           </form>
-          {linkMessage && <p className="mt-3 text-sm text-muted-foreground">{linkMessage}</p>}
+          <aside className="rounded-2xl border border-border bg-background p-5 shadow-sm">
+            <p className="eyebrow">Public preview</p>
+            <h2 className="mt-2 text-xl font-semibold">Exactly as visitors see it</h2>
+            <div className="mt-6">
+              {form.name && form.image ? (
+                <ProductCard product={preview} />
+              ) : (
+                <p className="rounded-xl bg-secondary p-6 text-sm leading-relaxed text-muted-foreground">
+                  Fill in the name, image, price, rating and Amazon link. Your visitor-facing card
+                  preview will appear here.
+                </p>
+              )}
+            </div>
+          </aside>
         </section>
-        <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-          Prototype notice: this UI does not persist changes or protect credentials on a server.
-          Connect it to server-side authentication and a database before production administration.
-        </p>
+        <section className="mt-8 rounded-2xl border border-border bg-background p-5 shadow-sm sm:p-7">
+          <p className="eyebrow">Live catalog preview</p>
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-xl font-semibold">Products currently visible to visitors</h2>
+            <Link to="/" className="text-sm font-medium underline">
+              Open public site
+            </Link>
+          </div>
+          {isLoading ? (
+            <p className="mt-6 text-sm text-muted-foreground">Loading products…</p>
+          ) : (
+            <div className="mt-6 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+          {!isLoading && !products.length && (
+            <p className="mt-6 rounded-xl bg-secondary p-6 text-sm text-muted-foreground">
+              No products are listed yet. Add your first genuine product above after completing
+              Supabase setup.
+            </p>
+          )}
+        </section>
       </div>
     </main>
   );
 }
 
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+  required,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  required?: boolean;
+  className?: string;
+}) {
+  return (
+    <label className={className}>
+      <span className="text-sm font-medium">{label}</span>
+      <input
+        type={type}
+        value={value}
+        required={required}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+      />
+    </label>
+  );
+}
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-border bg-background p-5">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-2 text-3xl font-bold">{value}</p>
+    </div>
+  );
+}
 function Login({
+  email,
+  setEmail,
   passcode,
   setPasscode,
   error,
   onSubmit,
+  useSupabase,
 }: {
+  email: string;
+  setEmail: (value: string) => void;
   passcode: string;
   setPasscode: (value: string) => void;
   error: string;
   onSubmit: (event: FormEvent) => void;
+  useSupabase: boolean;
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-secondary/40 p-5">
@@ -197,15 +358,30 @@ function Login({
         <p className="mt-7 eyebrow">Restricted access</p>
         <h1 className="mt-2 text-3xl font-bold">Control room</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Enter your administrator passcode to manage affiliate listings.
+          {useSupabase
+            ? "Sign in with your Supabase administrator account to manage the catalog."
+            : "Enter the demonstration passcode to preview the admin area."}
         </p>
+        {useSupabase && (
+          <label className="mt-7 block text-sm font-medium">
+            Admin email
+            <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              type="email"
+              required
+              autoFocus
+              className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+        )}
         <label className="mt-7 block text-sm font-medium">
-          Passcode
+          {useSupabase ? "Password" : "Passcode"}
           <input
             value={passcode}
             onChange={(event) => setPasscode(event.target.value)}
             type="password"
-            autoFocus
+            autoFocus={!useSupabase}
             className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-ring"
           />
         </label>
@@ -213,17 +389,12 @@ function Login({
         <button className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-medium text-primary-foreground">
           <ShieldCheck className="size-4" /> Unlock admin
         </button>
-        <p className="mt-5 text-center text-xs text-muted-foreground">Demo passcode: admin-demo</p>
+        {!useSupabase && (
+          <p className="mt-5 text-center text-xs text-muted-foreground">
+            Demo passcode: admin-demo
+          </p>
+        )}
       </form>
     </main>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-background p-5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-2 text-3xl font-bold">{value}</p>
-    </div>
   );
 }
