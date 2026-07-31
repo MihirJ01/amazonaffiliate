@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Search, ShoppingBag } from "lucide-react";
+import { Menu, Search, ShoppingBag, X } from "lucide-react";
+import { useState } from "react";
 
 const nav = [
   { label: "Home", to: "/" as const, search: undefined },
@@ -10,6 +11,8 @@ const nav = [
 ];
 
 export function SiteHeader() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-xl">
       <div className="container-edge flex h-[72px] items-center justify-between gap-6">
@@ -17,7 +20,7 @@ export function SiteHeader() {
           MG Studio <span className="text-muted-foreground">&amp; Sales</span>
         </Link>
 
-        <nav className="hidden items-center gap-8 lg:flex">
+        <nav className="hidden items-center gap-8 lg:flex" aria-label="Primary navigation">
           {nav.map((item) => (
             <Link
               key={item.label}
@@ -48,8 +51,37 @@ export function SiteHeader() {
             <ShoppingBag className="size-4" aria-hidden />
             Browse
           </Link>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-border lg:hidden"
+            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
       </div>
+      {menuOpen && (
+        <nav
+          className="container-edge motion-reveal border-t border-border/60 py-4 lg:hidden"
+          aria-label="Mobile navigation"
+        >
+          <div className="grid grid-cols-2 gap-2">
+            {nav.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                search={item.search as never}
+                onClick={() => setMenuOpen(false)}
+                className="rounded-xl bg-secondary px-4 py-3 text-center text-xs font-medium uppercase tracking-[0.14em]"
+              >
+                {item.label.trim()}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      )}
     </header>
   );
 }

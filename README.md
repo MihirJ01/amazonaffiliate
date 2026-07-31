@@ -118,6 +118,31 @@ This is **not production authentication**. Because the current check runs in the
 
 Never put an Amazon secret, API key, or a real admin password in browser code, a `VITE_*` variable, or a committed `.env` file.
 
+## Connect Supabase for affiliate links
+
+The storefront can load each product's Amazon Associates URL from Supabase. This lets you update links without changing the product-card code.
+
+1. Create a Supabase project.
+2. In **SQL Editor**, run [`supabase/schema.sql`](supabase/schema.sql).
+3. Copy `.env.example` to `.env.local` and fill in your project URL and **anon/public** key.
+4. In Vercel, add the same values under **Settings → Environment Variables**:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+5. Add or update a link in the `affiliate_links` table. Its `product_id` must match a product's `id` in `src/data/products.ts`.
+
+Example row:
+
+```text
+product_id: aurora-14-ultrabook
+affiliate_url: https://www.amazon.com/dp/EXAMPLE/?tag=YOUR_TAG-20
+```
+
+When Supabase is not configured, the storefront continues to use `affiliateUrl` values in the local catalog, then falls back to an Amazon search link. The browser only receives the public anon key; never add a service-role key to Vercel's `VITE_*` variables.
+
 ## Deploy to Vercel
 
 This is a server-rendered TanStack Start project. Import the Git repository in Vercel, then use these settings from the **Build and Development Settings** page shown in the screenshots:

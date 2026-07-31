@@ -1,15 +1,21 @@
 import { Star } from "lucide-react";
 import type { Product } from "@/data/products";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  affiliateUrl,
+}: {
+  product: Product;
+  affiliateUrl?: string;
+}) {
   return (
-    <article className="group flex flex-col">
+    <article className="group motion-reveal flex flex-col">
       <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted">
         <img
           src={product.image}
           alt={product.name}
           loading="lazy"
-          className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+          className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
         />
         {product.deal && (
           <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground">
@@ -39,7 +45,9 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
       <a
         href={
-          product.affiliateUrl || `https://www.amazon.com/s?k=${encodeURIComponent(product.name)}`
+          affiliateUrl ||
+          product.affiliateUrl ||
+          `https://www.amazon.com/s?k=${encodeURIComponent(product.name)}`
         }
         target="_blank"
         rel="noopener noreferrer nofollow"

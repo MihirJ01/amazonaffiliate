@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
 import { products } from "@/data/products";
+import { useAffiliateLinks } from "@/hooks/use-affiliate-links";
 
 type ShopSearch = { category?: string; deal?: boolean };
 
@@ -40,6 +41,7 @@ const filters = [
 
 function Shop() {
   const { category, deal } = Route.useSearch();
+  const affiliateLinks = useAffiliateLinks();
   const list = products.filter((p) => (!category || p.category === category) && (!deal || p.deal));
 
   const activeLabel = deal ? "Deals" : (category ?? "All");
@@ -79,7 +81,7 @@ function Shop() {
 
         <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <ProductCard key={p.id} product={p} affiliateUrl={affiliateLinks.get(p.id)} />
           ))}
         </div>
       </main>

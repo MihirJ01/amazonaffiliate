@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
 import { products, marqueeItems } from "@/data/products";
+import { useAffiliateLinks } from "@/hooks/use-affiliate-links";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -54,6 +55,7 @@ const approach = [
 function Index() {
   const featured = products.filter((p) => p.featured).slice(0, 6);
   const hero = products[0];
+  const affiliateLinks = useAffiliateLinks();
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,22 +63,22 @@ function Index() {
 
       <main>
         {/* Hero */}
-        <section className="container-edge grid items-center gap-12 py-16 lg:grid-cols-2 lg:py-24">
-          <div>
-            <div className="flex items-center gap-4">
+        <section className="container-edge grid items-center gap-12 overflow-hidden py-16 lg:grid-cols-2 lg:py-24">
+          <div className="motion-reveal">
+            <div className="flex items-center gap-4 motion-delay-1">
               <span className="h-px w-8 bg-foreground" />
               <span className="eyebrow">Electronics &amp; Home · Curated</span>
             </div>
-            <h1 className="mt-6 text-[clamp(2.75rem,7vw,5.25rem)] font-bold leading-[0.95]">
+            <h1 className="motion-reveal motion-delay-1 mt-6 text-[clamp(2.75rem,7vw,5.25rem)] font-bold leading-[0.95]">
               The edit for
               <br />
               <span className="text-muted-foreground">modern living.</span>
             </h1>
-            <p className="mt-7 max-w-md text-base leading-relaxed text-muted-foreground">
+            <p className="motion-reveal motion-delay-2 mt-7 max-w-md text-base leading-relaxed text-muted-foreground">
               A tightly-curated shelf of the best gadgets and home essentials — reviewed, ranked and
               linked straight to Amazon.
             </p>
-            <div className="mt-9 flex flex-wrap gap-3">
+            <div className="motion-reveal motion-delay-3 mt-9 flex flex-wrap gap-3">
               <Link
                 to="/shop"
                 search={{}}
@@ -95,7 +97,7 @@ function Index() {
                 View today's deals
               </Link>
             </div>
-            <dl className="mt-14 flex gap-12">
+            <dl className="motion-reveal motion-delay-3 mt-14 flex flex-wrap gap-8 sm:gap-12">
               {stats.map((s) => (
                 <div key={s.label}>
                   <dt className="sr-only">{s.label}</dt>
@@ -108,7 +110,7 @@ function Index() {
             </dl>
           </div>
 
-          <div className="relative">
+          <div className="motion-reveal motion-delay-2 relative">
             <div className="aspect-[4/5] overflow-hidden rounded-3xl bg-muted">
               <img
                 src={hero.image}
@@ -117,7 +119,7 @@ function Index() {
                 fetchPriority="high"
               />
             </div>
-            <div className="absolute -bottom-6 left-0 max-w-[240px] rounded-2xl bg-background p-5 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.35)]">
+            <div className="absolute -bottom-6 left-0 max-w-[240px] rounded-2xl bg-background p-5 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.35)] transition-transform duration-500 hover:-translate-y-1">
               <p className="eyebrow">This week</p>
               <p className="mt-1 font-semibold tracking-tight">{hero.name}</p>
               <p className="text-sm text-muted-foreground">from ${hero.price.toLocaleString()}</p>
@@ -155,7 +157,7 @@ function Index() {
           </div>
           <div className="mt-12 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} affiliateUrl={affiliateLinks.get(p.id)} />
             ))}
           </div>
         </section>

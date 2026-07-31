@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LockKeyhole, LogOut, Plus, ShieldCheck } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { products } from "@/data/products";
+import { saveAffiliateLink } from "@/lib/affiliate-links";
+import { supabase } from "@/lib/supabase";
 
 const SESSION_KEY = "affiliate-admin-session";
 
@@ -17,6 +19,10 @@ function ControlRoom() {
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
   const [added, setAdded] = useState(0);
+  const [productId, setProductId] = useState(products[0].id);
+  const [affiliateUrl, setAffiliateUrl] = useState("");
+  const [linkMessage, setLinkMessage] = useState("");
+  const [savingLink, setSavingLink] = useState(false);
 
   useEffect(() => setSignedIn(sessionStorage.getItem(SESSION_KEY) === "active"), []);
 
@@ -29,6 +35,25 @@ function ControlRoom() {
     }
     sessionStorage.setItem(SESSION_KEY, "active");
     setSignedIn(true);
+  }
+
+  async function saveLink(event: FormEvent) {
+    event.preventDefault();
+    if (!supabase) {
+      setLinkMessage("Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY before saving links.");
+      return;
+    }
+    setSavingLink(true);
+    setLinkMessage("");
+    try {
+      await saveAffiliateLink(productId, affiliateUrl);
+      setAffiliateUrl("");
+      setLinkMessage("Affiliate link saved to Supabase.");
+    } catch {
+      setLinkMessage("Could not save the link. Check your Supabase table and access policies.");
+    } finally {
+      setSavingLink(false);
+    }
   }
 
   if (!signedIn) {
@@ -104,6 +129,41 @@ function ControlRoom() {
               </tbody>
             </table>
           </div>
+        </section>
+        <section className="mt-8 rounded-2xl border border-border bg-background p-6 shadow-sm">
+          <p className="eyebrow">Supabase link manager</p>
+          <h2 className="mt-2 text-xl font-semibold">Save an Amazon Associates link</h2>
+          <form
+            onSubmit={saveLink}
+            className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto]"
+          >
+            <select
+              value={productId}
+              onChange={(event) => setProductId(event.target.value)}
+              className="rounded-xl border border-input bg-background px-4 py-3 text-sm"
+            >
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+            <input
+              value={affiliateUrl}
+              onChange={(event) => setAffiliateUrl(event.target.value)}
+              type="url"
+              required
+              placeholder="https://www.amazon.com/.../?tag=YOUR_TAG-20"
+              className="rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              disabled={savingLink}
+              className="rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
+            >
+              {savingLink ? "Saving…" : "Save link"}
+            </button>
+          </form>
+          {linkMessage && <p className="mt-3 text-sm text-muted-foreground">{linkMessage}</p>}
         </section>
         <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
           Prototype notice: this UI does not persist changes or protect credentials on a server.
