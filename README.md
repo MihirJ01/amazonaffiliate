@@ -130,6 +130,7 @@ The storefront can load each product's Amazon Associates URL from Supabase. This
 ```text
 VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
+VITE_SITE_URL
 ```
 
 5. Add or update a link in the `affiliate_links` table. Its `product_id` must match a product's `id` in `src/data/products.ts`.
@@ -142,6 +143,8 @@ affiliate_url: https://www.amazon.com/dp/EXAMPLE/?tag=YOUR_TAG-20
 ```
 
 When Supabase is not configured, the storefront continues to use `affiliateUrl` values in the local catalog, then falls back to an Amazon search link. The browser only receives the public anon key; never add a service-role key to Vercel's `VITE_*` variables.
+
+For the full click-by-click setup, see [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
 ## Deploy to Vercel
 

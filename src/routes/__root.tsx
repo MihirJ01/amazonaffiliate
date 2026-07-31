@@ -11,6 +11,9 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 
+const siteUrl = import.meta.env.VITE_SITE_URL?.replace(/\/$/, "");
+const socialPreview = `${siteUrl ?? ""}/social-preview.png`;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -93,6 +96,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "A tightly-curated shelf of the best gadgets and home essentials — reviewed, ranked and linked straight to Amazon.",
       },
+      { property: "og:image", content: socialPreview },
+      { name: "twitter:image", content: socialPreview },
     ],
     links: [
       {
@@ -105,7 +110,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
     ],
   }),
 
