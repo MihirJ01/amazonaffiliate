@@ -13,7 +13,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { ProductCard } from "@/components/product-card";
 import { useProducts } from "@/hooks/use-products";
 import { productCategories, subcategoryOptions } from "@/lib/categories";
-import { type Product, type ProductInput, saveProduct } from "@/lib/products";
+import { type Product, type ProductInput, saveProduct, updateProduct } from "@/lib/products";
 import { supabase } from "@/lib/supabase";
 import { importAmazonProduct } from "@/server/amazon-import";
 
@@ -46,6 +46,7 @@ function ControlRoom() {
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
   const [form, setForm] = useState<ProductInput>(emptyProduct);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messageKind, setMessageKind] = useState<"error" | "success" | "info">("info");
   const [saving, setSaving] = useState(false);
@@ -93,12 +94,15 @@ function ControlRoom() {
     setSaving(true);
     showMessage("");
     try {
-      const savedProduct = await saveProduct(form);
+      const savedProduct = editingId
+        ? await updateProduct(editingId, form)
+        : await saveProduct(form);
       await queryClient.invalidateQueries({ queryKey: ["products"] });
       await refetch();
       setForm(emptyProduct);
+      setEditingId(null);
       showMessage(
-        `Saved “${savedProduct.name}” to Supabase. It is now visible in the live catalog below and on the public storefront.`,
+        `${editingId ? "Updated" : "Saved"} “${savedProduct.name}” in Supabase. It is now visible in the live catalog below and on the public storefront.`,
         "success",
       );
     } catch (error) {
@@ -106,6 +110,14 @@ function ControlRoom() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function editProduct(product: Product) {
+    const { id, ...productInput } = product;
+    setForm(productInput);
+    setEditingId(id);
+    showMessage(`Editing “${product.name}”. Make your changes, then click Update product.`, "info");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function importFromAmazon() {
@@ -210,8 +222,10 @@ function ControlRoom() {
                 <Plus className="size-4" />
               </span>
               <div>
-                <p className="eyebrow">New listing</p>
-                <h2 className="text-xl font-semibold">Add a real product</h2>
+                <p className="eyebrow">{editingId ? "Editing listing" : "New listing"}</p>
+                <h2 className="text-xl font-semibold">
+                  {editingId ? "Update product" : "Add a real product"}
+                </h2>
               </div>
             </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -324,8 +338,21 @@ function ControlRoom() {
               disabled={saving}
               className="mt-6 rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground disabled:opacity-60"
             >
-              {saving ? "Saving…" : "Save product"}
+              {saving ? "Saving…" : editingId ? "Update product" : "Save product"}
             </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setForm(emptyProduct);
+                  setEditingId(null);
+                  showMessage("Edit cancelled.", "info");
+                }}
+                className="ml-3 rounded-xl border border-border px-5 py-3 text-sm font-medium"
+              >
+                Cancel edit
+              </button>
+            )}
             {message && (
               <p
                 role="status"
@@ -383,7 +410,7 @@ function ControlRoom() {
           ) : (
             <div className="mt-6 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} onEdit={editProduct} />
               ))}
             </div>
           )}

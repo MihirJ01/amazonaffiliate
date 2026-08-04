@@ -1,9 +1,15 @@
-import { ChevronDown, ExternalLink, Star } from "lucide-react";
+import { ChevronDown, ExternalLink, Pencil, Star } from "lucide-react";
 import { useState } from "react";
 import type { Product } from "@/lib/products";
 import { formatIndianRupees } from "@/lib/utils";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  onEdit,
+}: {
+  product: Product;
+  onEdit?: (product: Product) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const hasLongName = product.name.length > 58;
 
@@ -20,6 +26,17 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground">
             Deal
           </span>
+        )}
+        {onEdit && (
+          <button
+            type="button"
+            onClick={() => onEdit(product)}
+            className="absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full bg-background/95 text-foreground shadow-sm transition hover:scale-105 hover:bg-primary hover:text-primary-foreground"
+            aria-label={`Edit ${product.name}`}
+            title="Edit product"
+          >
+            <Pencil className="size-4" />
+          </button>
         )}
       </div>
       <div className="mt-4 flex items-start justify-between gap-3 px-1">

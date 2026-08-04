@@ -74,25 +74,41 @@ export async function saveProductAffiliateLink(productId: string, affiliateUrl: 
 
 export type ProductInput = Omit<Product, "id">;
 
+function productPayload(product: ProductInput) {
+  return {
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    subcategory: product.subcategory,
+    price: product.price,
+    old_price: product.oldPrice ?? null,
+    rating: product.rating,
+    reviews: product.reviews,
+    deal: product.deal,
+    featured: product.featured,
+    image: product.image,
+    blurb: product.blurb,
+    affiliate_url: product.affiliateUrl,
+  };
+}
+
 export async function saveProduct(product: ProductInput) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { data, error } = await supabase
     .from("products")
-    .insert({
-      name: product.name,
-      brand: product.brand,
-      category: product.category,
-      subcategory: product.subcategory,
-      price: product.price,
-      old_price: product.oldPrice ?? null,
-      rating: product.rating,
-      reviews: product.reviews,
-      deal: product.deal,
-      featured: product.featured,
-      image: product.image,
-      blurb: product.blurb,
-      affiliate_url: product.affiliateUrl,
-    })
+    .insert(productPayload(product))
+    .select("*")
+    .single();
+  if (error) throw error;
+  return toProduct(data as ProductRow);
+}
+
+export async function updateProduct(id: string, product: ProductInput) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("products")
+    .update(productPayload(product))
+    .eq("id", id)
     .select("*")
     .single();
   if (error) throw error;
