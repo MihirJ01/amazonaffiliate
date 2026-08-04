@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -17,6 +18,7 @@ const marqueeItems = [
 ];
 
 function Index() {
+  const [heroDetailsOpen, setHeroDetailsOpen] = useState(false);
   const { data: products = [], isLoading } = useProducts();
   const featured = (
     products.some((product) => product.featured)
@@ -101,12 +103,27 @@ function Index() {
                 </p>
               )}
             </div>
-            <div className="absolute -bottom-4 left-3 max-w-[240px] rounded-2xl border border-border/60 bg-background/95 p-5 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.35)] backdrop-blur transition-transform duration-500 hover:-translate-y-1 sm:-bottom-6 sm:left-0">
+            <div className="absolute -bottom-4 left-3 w-[min(14.5rem,calc(100%-1.5rem))] rounded-2xl border border-border/60 bg-background/95 p-4 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.35)] backdrop-blur transition-transform duration-500 hover:-translate-y-1 sm:-bottom-6 sm:left-0">
               <p className="eyebrow">This week</p>
-              <p className="mt-1 font-semibold tracking-tight">
+              <p
+                className={`mt-1 text-sm font-semibold leading-snug tracking-tight ${heroDetailsOpen ? "" : "line-clamp-2"}`}
+              >
                 {hero?.name ?? "Your first product"}
               </p>
-              <p className="text-sm text-muted-foreground">
+              {hero && hero.name.length > 58 && (
+                <button
+                  type="button"
+                  onClick={() => setHeroDetailsOpen((current) => !current)}
+                  className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                  aria-expanded={heroDetailsOpen}
+                >
+                  {heroDetailsOpen ? "Show less" : "Read more"}
+                  <ChevronDown
+                    className={`size-3 transition-transform ${heroDetailsOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+              )}
+              <p className="mt-1 text-sm text-muted-foreground">
                 {hero ? `from ${formatIndianRupees(hero.price)}` : "Add products in Supabase"}
               </p>
             </div>
