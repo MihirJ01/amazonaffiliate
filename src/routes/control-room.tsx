@@ -1,6 +1,14 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, LockKeyhole, LogOut, Plus, ShieldCheck, WandSparkles } from "lucide-react";
+import {
+  ExternalLink,
+  LockKeyhole,
+  LogOut,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  WandSparkles,
+} from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { ProductCard } from "@/components/product-card";
 import { useProducts } from "@/hooks/use-products";
@@ -38,14 +46,19 @@ function ControlRoom() {
   const [error, setError] = useState("");
   const [form, setForm] = useState<ProductInput>(emptyProduct);
   const [message, setMessage] = useState("");
+  const [messageKind, setMessageKind] = useState<"error" | "success" | "info">("info");
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const queryClient = useQueryClient();
-  const { data: products = [], isLoading } = useProducts();
+  const { data: products = [], isLoading, error: productsError, refetch } = useProducts();
 
   useEffect(() => setSignedIn(sessionStorage.getItem(SESSION_KEY) === "active"), []);
   const setField = <K extends keyof ProductInput>(key: K, value: ProductInput[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
+  const showMessage = (value: string, kind: "error" | "success" | "info" = "info") => {
+    setMessage(value);
+    setMessageKind(kind);
+  };
 
   async function signIn(event: FormEvent) {
     event.preventDefault();
@@ -70,20 +83,25 @@ function ControlRoom() {
   async function submitProduct(event: FormEvent) {
     event.preventDefault();
     if (!supabase) {
-      setMessage("Connect Supabase in Vercel before saving products.");
+      showMessage(
+        "Supabase is not connected. Add the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY values in Vercel, then redeploy.",
+        "error",
+      );
       return;
     }
     setSaving(true);
-    setMessage("");
+    showMessage("");
     try {
-      await saveProduct(form);
+      const savedProduct = await saveProduct(form);
       await queryClient.invalidateQueries({ queryKey: ["products"] });
+      await refetch();
       setForm(emptyProduct);
-      setMessage("Product saved. It will now appear on the public storefront.");
-    } catch {
-      setMessage(
-        "Product could not be saved. Check Supabase database policies and setup instructions.",
+      showMessage(
+        `Saved “${savedProduct.name}” to Supabase. It is now visible in the live catalog below and on the public storefront.`,
+        "success",
       );
+    } catch (error) {
+      showMessage(describeSupabaseError(error), "error");
     } finally {
       setSaving(false);
     }
@@ -91,15 +109,18 @@ function ControlRoom() {
 
   async function importFromAmazon() {
     if (!supabase) {
-      setMessage("Connect Supabase before importing a product.");
+      showMessage(
+        "Supabase is not connected. Add the Vercel Supabase environment variables first.",
+        "error",
+      );
       return;
     }
     if (!form.affiliateUrl.trim()) {
-      setMessage("Paste one Amazon Associates link first.");
+      showMessage("Paste one complete Amazon product link first.", "error");
       return;
     }
     setImporting(true);
-    setMessage("");
+    showMessage("");
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
@@ -108,9 +129,15 @@ function ControlRoom() {
         data: { affiliateUrl: form.affiliateUrl, accessToken },
       });
       setForm((current) => ({ ...current, ...imported }));
-      setMessage("Product details imported from Amazon. Review the preview, then save it.");
+      showMessage(
+        "Product details imported. Review the preview, then click Save product.",
+        "success",
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Amazon details could not be imported.");
+      showMessage(
+        error instanceof Error ? error.message : "SearchAPI could not import this product.",
+        "error",
+      );
     } finally {
       setImporting(false);
     }
@@ -192,6 +219,7 @@ function ControlRoom() {
                   <span className="text-sm font-medium">Amazon Associates link</span>
                   <input
                     type="url"
+                    required
                     value={form.affiliateUrl}
                     onChange={(event) => setField("affiliateUrl", event.target.value)}
                     placeholder="Paste one Amazon product link"
@@ -292,7 +320,20 @@ function ControlRoom() {
             >
               {saving ? "Saving…" : "Save product"}
             </button>
-            {message && <p className="mt-3 text-sm text-muted-foreground">{message}</p>}
+            {message && (
+              <p
+                role="status"
+                className={`mt-3 rounded-xl px-4 py-3 text-sm ${
+                  messageKind === "error"
+                    ? "bg-destructive/10 text-destructive"
+                    : messageKind === "success"
+                      ? "bg-emerald-500/10 text-emerald-700"
+                      : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                {message}
+              </p>
+            )}
           </form>
           <aside className="rounded-2xl border border-border bg-background p-5 shadow-sm">
             <p className="eyebrow">Public preview</p>
@@ -313,10 +354,24 @@ function ControlRoom() {
           <p className="eyebrow">Live catalog preview</p>
           <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
             <h2 className="text-xl font-semibold">Products currently visible to visitors</h2>
-            <Link to="/" className="text-sm font-medium underline">
-              Open public site
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="inline-flex items-center gap-2 text-sm font-medium underline"
+              >
+                <RefreshCw className="size-3.5" /> Refresh catalog
+              </button>
+              <Link to="/" className="text-sm font-medium underline">
+                Open public site
+              </Link>
+            </div>
           </div>
+          {productsError && (
+            <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {describeSupabaseError(productsError)}
+            </p>
+          )}
           {isLoading ? (
             <p className="mt-6 text-sm text-muted-foreground">Loading products…</p>
           ) : (
@@ -336,6 +391,23 @@ function ControlRoom() {
       </div>
     </main>
   );
+}
+
+function describeSupabaseError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Unknown database error.";
+  const detail =
+    typeof error === "object" && error && "details" in error ? String(error.details ?? "") : "";
+  const combined = `${message} ${detail}`.toLowerCase();
+  if (combined.includes("relation") && combined.includes("products")) {
+    return "Supabase cannot find the products table. Run supabase/schema.sql once in Supabase SQL Editor.";
+  }
+  if (combined.includes("row-level security") || combined.includes("permission denied")) {
+    return "Supabase blocked this save. Sign out and back in with the administrator account, then verify the policies in supabase/schema.sql were run.";
+  }
+  if (combined.includes("affiliate_url") || combined.includes("image")) {
+    return "Supabase needs a valid https:// Amazon link and a valid https:// image URL. Check both fields and try again.";
+  }
+  return `Supabase could not save or load the product: ${message}`;
 }
 
 function Field({

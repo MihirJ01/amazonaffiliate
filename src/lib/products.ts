@@ -76,20 +76,25 @@ export type ProductInput = Omit<Product, "id">;
 
 export async function saveProduct(product: ProductInput) {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const { error } = await supabase.from("products").insert({
-    name: product.name,
-    brand: product.brand,
-    category: product.category,
-    subcategory: product.subcategory,
-    price: product.price,
-    old_price: product.oldPrice ?? null,
-    rating: product.rating,
-    reviews: product.reviews,
-    deal: product.deal,
-    featured: product.featured,
-    image: product.image,
-    blurb: product.blurb,
-    affiliate_url: product.affiliateUrl,
-  });
+  const { data, error } = await supabase
+    .from("products")
+    .insert({
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+      subcategory: product.subcategory,
+      price: product.price,
+      old_price: product.oldPrice ?? null,
+      rating: product.rating,
+      reviews: product.reviews,
+      deal: product.deal,
+      featured: product.featured,
+      image: product.image,
+      blurb: product.blurb,
+      affiliate_url: product.affiliateUrl,
+    })
+    .select("*")
+    .single();
   if (error) throw error;
+  return toProduct(data as ProductRow);
 }
