@@ -4,6 +4,7 @@ import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { useProducts } from "@/hooks/use-products";
+import { formatIndianRupees } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({ component: Index });
 
@@ -106,7 +107,7 @@ function Index() {
                 {hero?.name ?? "Your first product"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {hero ? `from $${hero.price.toLocaleString()}` : "Add products in Supabase"}
+                {hero ? `from ${formatIndianRupees(hero.price)}` : "Add products in Supabase"}
               </p>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import type { Product } from "@/lib/products";
+import { formatIndianRupees } from "@/lib/utils";
 
 export function ProductCard({ product }: { product: Product }) {
   return (
@@ -23,10 +24,10 @@ export function ProductCard({ product }: { product: Product }) {
           <h3 className="mt-1 text-base font-semibold tracking-tight">{product.name}</h3>
         </div>
         <div className="text-right">
-          <p className="text-base font-semibold">${product.price.toLocaleString()}</p>
+          <p className="text-base font-semibold">{formatIndianRupees(product.price)}</p>
           {product.oldPrice && (
             <p className="text-xs text-muted-foreground line-through">
-              ${product.oldPrice.toLocaleString()}
+              {formatIndianRupees(product.oldPrice)}
             </p>
           )}
         </div>
@@ -39,7 +40,7 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
       <a
         href={
-          product.affiliateUrl || `https://www.amazon.com/s?k=${encodeURIComponent(product.name)}`
+          product.affiliateUrl || `https://www.amazon.in/s?k=${encodeURIComponent(product.name)}`
         }
         target="_blank"
         rel="noopener noreferrer nofollow"

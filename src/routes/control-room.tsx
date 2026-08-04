@@ -251,7 +251,7 @@ function ControlRoom() {
                 onChange={(value) => setField("brand", value)}
               />
               <Field
-                label="Price (USD)"
+                label="Price (INR)"
                 type="number"
                 value={String(form.price)}
                 onChange={(value) => setField("price", Number(value))}
