@@ -14,8 +14,12 @@ create table if not exists public.products (
   image text not null check (image ~ '^https?://'),
   blurb text,
   affiliate_url text not null check (affiliate_url ~ '^https?://'),
+  price_updated_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+-- Safe to run when the products table was created by an earlier version of this project.
+alter table public.products add column if not exists price_updated_at timestamptz;
 
 alter table public.products enable row level security;
 

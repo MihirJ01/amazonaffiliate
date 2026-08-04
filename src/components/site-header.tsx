@@ -5,8 +5,9 @@ import { useState } from "react";
 const nav = [
   { label: "Home", to: "/" as const, search: undefined },
   { label: "Shop", to: "/shop" as const, search: {} },
-  { label: "Electronics", to: "/shop" as const, search: { category: "Electronics" } },
-  { label: "Home ", to: "/shop" as const, search: { category: "Home" } },
+  { label: "Computer parts", to: "/shop" as const, search: { category: "Computer Parts" } },
+  { label: "Graphics cards", to: "/shop" as const, search: { category: "Graphics Cards" } },
+  { label: "Audio", to: "/shop" as const, search: { category: "Audio & Headphones" } },
   { label: "Deals", to: "/shop" as const, search: { deal: true } },
 ];
 

@@ -109,4 +109,21 @@ The original affiliate URL you pasted is retained for the **View on Amazon** but
 
 ## Do I need extra SQL?
 
-No. The existing [`supabase/schema.sql`](supabase/schema.sql) already stores all imported fields. SearchAPI setup is done entirely with Vercel environment variables.
+For a new Supabase project, run the complete [`supabase/schema.sql`](supabase/schema.sql) once. If you created the `products` table before adding the daily price refresh, run this small migration in Supabase SQL Editor once:
+
+```sql
+alter table public.products add column if not exists price_updated_at timestamptz;
+```
+
+## Daily automatic price refresh
+
+The project includes a Vercel Cron Job that runs every day at **4:00 UTC (9:30 AM India time)**. It checks up to 25 of the oldest price records through SearchAPI and updates their prices in Supabase. This keeps SearchAPI usage controlled while rotating through larger catalogues.
+
+Add these two additional server-only Vercel environment variables:
+
+```text
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+CRON_SECRET=a-long-random-secret-you-create
+```
+
+Find the service role key in **Supabase -> Project Settings -> API**. It must stay in Vercel only; never put it in a `VITE_` variable, GitHub, or a screenshot. Redeploy after adding the variables. Vercel reads [`vercel.json`](vercel.json) and automatically registers the daily job.

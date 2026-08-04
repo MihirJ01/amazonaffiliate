@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
 import { useProducts } from "@/hooks/use-products";
+import { productCategories } from "@/lib/categories";
 
 type ShopSearch = { category?: string; deal?: boolean };
 
@@ -31,19 +32,20 @@ export const Route = createFileRoute("/shop")({
   component: Shop,
 });
 
-const filters = [
-  { label: "All", search: {} as ShopSearch },
-  { label: "Electronics", search: { category: "Electronics" } as ShopSearch },
-  { label: "Home", search: { category: "Home" } as ShopSearch },
-  { label: "Deals", search: { deal: true } as ShopSearch },
-];
-
 function Shop() {
   const { category, deal } = Route.useSearch();
   const { data: products = [], isLoading } = useProducts();
   const list = products.filter((p) => (!category || p.category === category) && (!deal || p.deal));
 
   const activeLabel = deal ? "Deals" : (category ?? "All");
+  const visibleCategories = productCategories.filter((item) =>
+    products.some((product) => product.category === item),
+  );
+  const filters = [
+    { label: "All", search: {} as ShopSearch },
+    ...visibleCategories.map((item) => ({ label: item, search: { category: item } as ShopSearch })),
+    { label: "Deals", search: { deal: true } as ShopSearch },
+  ];
 
   return (
     <div className="min-h-screen bg-background">

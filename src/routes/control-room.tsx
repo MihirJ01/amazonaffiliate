@@ -12,6 +12,7 @@ import {
 import { type FormEvent, useEffect, useState } from "react";
 import { ProductCard } from "@/components/product-card";
 import { useProducts } from "@/hooks/use-products";
+import { productCategories } from "@/lib/categories";
 import { type Product, type ProductInput, saveProduct } from "@/lib/products";
 import { supabase } from "@/lib/supabase";
 import { importAmazonProduct } from "@/server/amazon-import";
@@ -20,7 +21,7 @@ const SESSION_KEY = "affiliate-admin-session";
 const emptyProduct: ProductInput = {
   name: "",
   brand: "",
-  category: "Electronics",
+  category: "Computer Parts",
   subcategory: "",
   price: 0,
   rating: 4.5,
@@ -270,11 +271,11 @@ function ControlRoom() {
                 value={String(form.reviews)}
                 onChange={(value) => setField("reviews", Number(value))}
               />
-              <Field
+              <SelectField
                 label="Category"
                 value={form.category}
                 onChange={(value) => setField("category", value)}
-                required
+                options={productCategories}
               />
               <Field
                 label="Subcategory"
@@ -435,6 +436,35 @@ function Field({
         onChange={(event) => onChange(event.target.value)}
         className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
       />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly string[];
+}) {
+  return (
+    <label>
+      <span className="text-sm font-medium">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

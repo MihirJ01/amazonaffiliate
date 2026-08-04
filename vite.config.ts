@@ -11,7 +11,16 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart({ server: { entry: "server" } }),
     // Produces the Vercel-compatible server output for TanStack Start SSR.
-    nitro({ preset: "vercel" }),
+    nitro({
+      preset: "vercel",
+      handlers: [
+        {
+          route: "/api/refresh-prices",
+          handler: "./server/routes/api/refresh-prices.get.ts",
+          method: "get",
+        },
+      ],
+    }),
     react(),
   ],
 });
