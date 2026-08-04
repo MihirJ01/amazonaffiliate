@@ -208,8 +208,7 @@ function ControlRoom() {
                   {importing ? "Importing from Amazon…" : "Fill details automatically"}
                 </button>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Requires Amazon Product Advertising API setup. Paste one link only, not the link
-                  twice.
+                  Uses SearchAPI. Paste one complete Amazon link only, not the link twice.
                 </p>
               </div>
               <Field

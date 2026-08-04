@@ -122,6 +122,8 @@ Never put an Amazon secret, API key, or a real admin password in browser code, a
 
 ## Connect Supabase for affiliate links
 
+For the current full setupâ€”including the private admin login and automatic product details from a pasted Amazon linkâ€”follow [SUPABASE_SETUP.md](SUPABASE_SETUP.md). The automatic importer uses SearchAPI and a server-only `SEARCHAPI_KEY` in Vercel.
+
 The storefront can load each product's Amazon Associates URL from Supabase. This lets you update links without changing the product-card code.
 
 1. Create a Supabase project.
