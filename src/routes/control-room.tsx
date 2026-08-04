@@ -1,11 +1,12 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, LockKeyhole, LogOut, Plus, ShieldCheck } from "lucide-react";
+import { ExternalLink, LockKeyhole, LogOut, Plus, ShieldCheck, WandSparkles } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { ProductCard } from "@/components/product-card";
 import { useProducts } from "@/hooks/use-products";
 import { type Product, type ProductInput, saveProduct } from "@/lib/products";
 import { supabase } from "@/lib/supabase";
+import { importAmazonProduct } from "@/server/amazon-import";
 
 const SESSION_KEY = "affiliate-admin-session";
 const emptyProduct: ProductInput = {
@@ -38,6 +39,7 @@ function ControlRoom() {
   const [form, setForm] = useState<ProductInput>(emptyProduct);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
   const queryClient = useQueryClient();
   const { data: products = [], isLoading } = useProducts();
 
@@ -87,6 +89,33 @@ function ControlRoom() {
     }
   }
 
+  async function importFromAmazon() {
+    if (!supabase) {
+      setMessage("Connect Supabase before importing a product.");
+      return;
+    }
+    if (!form.affiliateUrl.trim()) {
+      setMessage("Paste one Amazon Associates link first.");
+      return;
+    }
+    setImporting(true);
+    setMessage("");
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error("Please sign in again before importing.");
+      const imported = await importAmazonProduct({
+        data: { affiliateUrl: form.affiliateUrl, accessToken },
+      });
+      setForm((current) => ({ ...current, ...imported }));
+      setMessage("Product details imported from Amazon. Review the preview, then save it.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Amazon details could not be imported.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   if (!signedIn)
     return (
       <Login
@@ -109,8 +138,8 @@ function ControlRoom() {
             <p className="eyebrow">Private workspace</p>
             <h1 className="mt-2 text-3xl font-bold">Affiliate control room</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Add exactly what visitors will see: product image, name, price, rating and Amazon
-              link.
+              Paste an Amazon Associates link to fill the listing automatically, then review the
+              visitor preview before saving.
             </p>
           </div>
           <div className="flex gap-2">
@@ -158,6 +187,31 @@ function ControlRoom() {
               </div>
             </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2 rounded-2xl border border-dashed border-border bg-secondary/50 p-4">
+                <label>
+                  <span className="text-sm font-medium">Amazon Associates link</span>
+                  <input
+                    type="url"
+                    value={form.affiliateUrl}
+                    onChange={(event) => setField("affiliateUrl", event.target.value)}
+                    placeholder="Paste one Amazon product link"
+                    className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={importFromAmazon}
+                  disabled={importing}
+                  className="mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                >
+                  <WandSparkles className="size-4" />
+                  {importing ? "Importing from Amazon…" : "Fill details automatically"}
+                </button>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Requires Amazon Product Advertising API setup. Paste one link only, not the link
+                  twice.
+                </p>
+              </div>
               <Field
                 label="Product name"
                 value={form.name}
@@ -205,14 +259,6 @@ function ControlRoom() {
                 type="url"
                 value={form.image}
                 onChange={(value) => setField("image", value)}
-                required
-                className="sm:col-span-2"
-              />
-              <Field
-                label="Amazon Associates link"
-                type="url"
-                value={form.affiliateUrl}
-                onChange={(value) => setField("affiliateUrl", value)}
                 required
                 className="sm:col-span-2"
               />
