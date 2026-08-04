@@ -6,8 +6,10 @@ const nav = [
   { label: "Home", to: "/" as const, search: undefined },
   { label: "Shop", to: "/shop" as const, search: {} },
   { label: "Computer parts", to: "/shop" as const, search: { category: "Computer Parts" } },
-  { label: "Graphics cards", to: "/shop" as const, search: { category: "Graphics Cards" } },
-  { label: "Audio", to: "/shop" as const, search: { category: "Audio & Headphones" } },
+  { label: "Laptops", to: "/shop" as const, search: { category: "Laptops" } },
+  { label: "Smartphones", to: "/shop" as const, search: { category: "Smartphones" } },
+  { label: "Gadgets", to: "/shop" as const, search: { category: "Gadgets" } },
+  { label: "Gaming", to: "/shop" as const, search: { category: "Gaming" } },
   { label: "Deals", to: "/shop" as const, search: { deal: true } },
 ];
 

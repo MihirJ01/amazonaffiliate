@@ -12,7 +12,7 @@ import {
 import { type FormEvent, useEffect, useState } from "react";
 import { ProductCard } from "@/components/product-card";
 import { useProducts } from "@/hooks/use-products";
-import { productCategories } from "@/lib/categories";
+import { productCategories, subcategoryOptions } from "@/lib/categories";
 import { type Product, type ProductInput, saveProduct } from "@/lib/products";
 import { supabase } from "@/lib/supabase";
 import { importAmazonProduct } from "@/server/amazon-import";
@@ -274,13 +274,18 @@ function ControlRoom() {
               <SelectField
                 label="Category"
                 value={form.category}
-                onChange={(value) => setField("category", value)}
+                onChange={(value) =>
+                  setForm((current) => ({ ...current, category: value, subcategory: "" }))
+                }
                 options={productCategories}
+                placeholder="Select a category"
               />
-              <Field
+              <SelectField
                 label="Subcategory"
                 value={form.subcategory}
                 onChange={(value) => setField("subcategory", value)}
+                options={subcategoryOptions(form.category)}
+                placeholder="Select a subcategory"
               />
               <Field
                 label="Image URL"
@@ -445,11 +450,13 @@ function SelectField({
   value,
   onChange,
   options,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: readonly string[];
+  placeholder: string;
 }) {
   return (
     <label>
@@ -459,6 +466,7 @@ function SelectField({
         onChange={(event) => onChange(event.target.value)}
         className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
       >
+        <option value="">{placeholder}</option>
         {options.map((option) => (
           <option key={option} value={option}>
             {option}
