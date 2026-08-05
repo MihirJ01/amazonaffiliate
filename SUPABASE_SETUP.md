@@ -115,6 +115,63 @@ Open the local URL printed by Vite, sign in to `/control-room`, paste one Amazon
 
 Playwright needs Chromium installed on the same computer/server that runs the website. A normal Vercel deployment does not include that browser, so use the SearchAPI button on Vercel unless you configure a browser-compatible server environment yourself.
 
+## Hosted Vercel website with Playwright on your laptop
+
+You can keep the public frontend on Vercel and run only the Playwright browser service on your laptop. The laptop must remain powered on and connected to the internet whenever you use the Playwright button.
+
+### 1. Install Chromium on your laptop
+
+```powershell
+cd "C:\Users\mihir\Downloads\lovable-project-4d3c673c\amazonaffiliateclean"
+npm run setup:playwright
+```
+
+### 2. Create a service secret
+
+Generate a new secret. Do not reuse `CRON_SECRET`.
+
+```powershell
+[guid]::NewGuid().ToString("N")
+```
+
+Use the generated value as `PLAYWRIGHT_SERVICE_SECRET` in both places below.
+
+### 3. Start the laptop service
+
+In PowerShell, set the secret for this terminal session and start the service:
+
+```powershell
+$env:PLAYWRIGHT_SERVICE_SECRET="paste-your-new-secret-here"
+npm run playwright:service
+```
+
+It listens only on `http://127.0.0.1:3333`, so it is not public by itself.
+
+### 4. Create a secure HTTPS tunnel to your laptop
+
+Install [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) on your laptop. For a quick test, open a second PowerShell window and run:
+
+```powershell
+cloudflared tunnel --url http://127.0.0.1:3333
+```
+
+Copy the `https://...trycloudflare.com` URL it prints. For reliable long-term use, create a named Cloudflare Tunnel with your own domain; temporary `trycloudflare.com` URLs change every time you restart the tunnel.
+
+### 5. Add two Vercel variables and redeploy
+
+In **Vercel -> Project -> Settings -> Environment Variables**, add:
+
+```text
+PLAYWRIGHT_SERVICE_URL=https://the-url-from-your-cloudflare-tunnel
+PLAYWRIGHT_SERVICE_SECRET=the-same-secret-you-used-on-your-laptop
+```
+
+Do not add `VITE_` to either name. Redeploy the Vercel project after saving. Vercel now forwards the Playwright request securely to your laptop; your browser never receives the secret.
+
+### 6. Use the hosted website
+
+Open `https://mgstudios.vercel.app/control-room`, sign in, paste an Amazon link, then use **Fill details automatically using Playwright**. Keep both the laptop service and Cloudflare Tunnel windows running.
+
 ## Link rules and common problems
 
 - Paste one URL only. Do not paste the same link twice.

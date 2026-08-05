@@ -25,6 +25,24 @@ export const importAmazonProductWithPlaywright = createServerFn({ method: "POST"
   })
   .handler(async ({ data }): Promise<ImportedAmazonProduct> => {
     await verifyAdministrator(data.accessToken);
+    const remoteServiceUrl = process.env.PLAYWRIGHT_SERVICE_URL;
+    const remoteServiceSecret = process.env.PLAYWRIGHT_SERVICE_SECRET;
+    if (remoteServiceUrl && remoteServiceSecret) {
+      const response = await fetch(`${remoteServiceUrl.replace(/\/$/, "")}/import`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${remoteServiceSecret}`,
+        },
+        body: JSON.stringify({ affiliateUrl: data.affiliateUrl }),
+      });
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(
+          result.error ?? "Your laptop Playwright service could not import this product.",
+        );
+      return result as ImportedAmazonProduct;
+    }
     let source: URL;
     try {
       source = new URL(data.affiliateUrl);
