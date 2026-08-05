@@ -91,6 +91,30 @@ Notes:
 
 The original affiliate URL you pasted is retained for the **View on Amazon** button, so your tracking link is not replaced by SearchAPI.
 
+## Optional local Playwright importer
+
+The admin panel has two separate import buttons:
+
+1. **Fill details automatically using SearchAPI** — recommended for the deployed Vercel website. It uses your `SEARCHAPI_KEY` and does not need a browser installed.
+2. **Fill details automatically using Playwright** — an optional local-server fallback that opens a headless Chromium browser and reads the Amazon page. Amazon can show a CAPTCHA; if it does, use SearchAPI instead.
+
+To use Playwright on your own computer, open PowerShell in the project folder and run this once:
+
+```powershell
+cd "C:\Users\mihir\Downloads\lovable-project-4d3c673c\amazonaffiliateclean"
+npm run setup:playwright
+```
+
+Then start the local server:
+
+```powershell
+npm run dev
+```
+
+Open the local URL printed by Vite, sign in to `/control-room`, paste one Amazon product link, and click **Fill details automatically using Playwright**.
+
+Playwright needs Chromium installed on the same computer/server that runs the website. A normal Vercel deployment does not include that browser, so use the SearchAPI button on Vercel unless you configure a browser-compatible server environment yourself.
+
 ## Link rules and common problems
 
 - Paste one URL only. Do not paste the same link twice.
