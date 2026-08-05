@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amazon Product Scraper</title>
+    <style>
+      :root { font-family: Inter, system-ui, sans-serif; color: #101010; background: #f6f6f4; }
+      body { margin: 0; } main { max-width: 820px; margin: 0 auto; padding: 48px 20px; }
+      h1 { font-size: clamp(2rem, 5vw, 3.5rem); margin: 0; } p { color: #666; line-height: 1.55; }
+      .panel { margin-top: 28px; padding: 22px; background: white; border: 1px solid #ddd; border-radius: 20px; }
+      input { box-sizing: border-box; width: 100%; padding: 15px; border: 1px solid #bbb; border-radius: 12px; font: inherit; }
+      button { border: 0; border-radius: 12px; padding: 13px 17px; font: inherit; font-weight: 700; cursor: pointer; background: #111; color: #fff; }
+      button.secondary { background: #eee; color: #111; padding: 7px 11px; font-size: .82rem; } button:disabled { opacity: .55; cursor: wait; }
+      #message { min-height: 22px; margin-top: 14px; font-size: .92rem; } .error { color: #b42318; } .success { color: #177245; }
+      #results { display: grid; gap: 12px; margin-top: 22px; } .row { display: grid; grid-template-columns: 130px 1fr auto; gap: 12px; align-items: start; padding: 14px; background: #fafafa; border-radius: 12px; }
+      .label { font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #666; } .value { overflow-wrap: anywhere; white-space: pre-wrap; }
+      #copyAll { margin-top: 20px; } img { max-width: 140px; max-height: 100px; object-fit: contain; }
+      @media (max-width: 600px) { .row { grid-template-columns: 1fr auto; } .label { grid-column: 1 / -1; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="label">Local tool</p><h1>Amazon product scraper</h1>
+      <p>Paste a product link, extract the details, then copy individual values or all details to use in your affiliate-site admin panel.</p>
+      <section class="panel">
+        <label class="label" for="link">Amazon product link</label>
+        <input id="link" type="url" placeholder="Paste one Amazon product link" />
+        <button id="scrape" style="margin-top:12px">Extract product details</button>
+        <p id="message"></p>
+        <div id="results" hidden></div><button id="copyAll" hidden>Copy all details</button>
+      </section>
+    </main>
+    <script>
+      const fields = ["name", "brand", "price", "rating", "reviews", "image", "description", "affiliateUrl"];
+      const labels = { name: "Product name", brand: "Brand", price: "Price (INR)", rating: "Rating", reviews: "Reviews", image: "Image URL", description: "Description", affiliateUrl: "Amazon link" };
+      let latest = null;
+      const message = document.querySelector("#message"), results = document.querySelector("#results"), button = document.querySelector("#scrape"), copyAll = document.querySelector("#copyAll");
+      const copy = async (value) => { await navigator.clipboard.writeText(String(value ?? "")); message.className = "success"; message.textContent = "Copied to clipboard."; };
+      button.onclick = async () => {
+        button.disabled = true; message.className = ""; message.textContent = "Extracting product details…"; results.hidden = true; copyAll.hidden = true;
+        try {
+          const response = await fetch("/scrape", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ affiliateUrl: document.querySelector("#link").value }) });
+          latest = await response.json(); if (!response.ok) throw new Error(latest.error);
+          results.innerHTML = "";
+          fields.forEach((field) => { const row = document.createElement("div"); row.className = "row"; row.innerHTML = `<span class="label">${labels[field]}</span><span class="value"></span><button class="secondary">Copy</button>`; row.querySelector(".value").textContent = latest[field] ?? ""; row.querySelector("button").onclick = () => copy(latest[field]); results.append(row); });
+          message.className = "success"; message.textContent = "Product details extracted. Copy them into the admin form."; results.hidden = false; copyAll.hidden = false;
+        } catch (error) { message.className = "error"; message.textContent = error.message || "Could not extract product details."; } finally { button.disabled = false; }
+      };
+      copyAll.onclick = () => copy(JSON.stringify(latest, null, 2));
+    </script>
+  </body>
+</html>

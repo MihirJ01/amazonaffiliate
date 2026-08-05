@@ -14,7 +14,6 @@ import { ProductCard } from "@/components/product-card";
 import { useProducts } from "@/hooks/use-products";
 import { productCategories, subcategoryOptions } from "@/lib/categories";
 import { type Product, type ProductInput, saveProduct, updateProduct } from "@/lib/products";
-import { importAmazonProductWithPlaywright } from "@/server/amazon-playwright-import";
 import { supabase } from "@/lib/supabase";
 import { importAmazonProduct } from "@/server/amazon-import";
 
@@ -52,7 +51,6 @@ function ControlRoom() {
   const [messageKind, setMessageKind] = useState<"error" | "success" | "info">("info");
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [playwrightImporting, setPlaywrightImporting] = useState(false);
   const queryClient = useQueryClient();
   const { data: products = [], isLoading, error: productsError, refetch } = useProducts();
 
@@ -158,42 +156,6 @@ function ControlRoom() {
     }
   }
 
-  async function importFromPlaywright() {
-    if (!supabase) {
-      showMessage(
-        "Supabase is not connected. Add the Vercel Supabase environment variables first.",
-        "error",
-      );
-      return;
-    }
-    if (!form.affiliateUrl.trim()) {
-      showMessage("Paste one complete Amazon product link first.", "error");
-      return;
-    }
-    setPlaywrightImporting(true);
-    showMessage("");
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (!accessToken) throw new Error("Please sign in again before importing.");
-      const imported = await importAmazonProductWithPlaywright({
-        data: { affiliateUrl: form.affiliateUrl, accessToken },
-      });
-      setForm((current) => ({ ...current, ...imported }));
-      showMessage(
-        "Product details imported with Playwright. Review the preview, then click Save product.",
-        "success",
-      );
-    } catch (error) {
-      showMessage(
-        error instanceof Error ? error.message : "Playwright could not import this product.",
-        "error",
-      );
-    } finally {
-      setPlaywrightImporting(false);
-    }
-  }
-
   if (!signedIn)
     return (
       <Login
@@ -290,20 +252,8 @@ function ControlRoom() {
                     ? "Importing with SearchAPI…"
                     : "Fill details automatically using SearchAPI"}
                 </button>
-                <button
-                  type="button"
-                  onClick={importFromPlaywright}
-                  disabled={playwrightImporting}
-                  className="mt-3 ml-2 inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium disabled:opacity-60"
-                >
-                  <WandSparkles className="size-4" />
-                  {playwrightImporting
-                    ? "Importing with Playwright…"
-                    : "Fill details automatically using Playwright"}
-                </button>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  SearchAPI is best for Vercel. Playwright needs Chromium installed on the server
-                  running this site.
+                  Uses SearchAPI. Paste one complete Amazon link only, not the link twice.
                 </p>
               </div>
               <Field
