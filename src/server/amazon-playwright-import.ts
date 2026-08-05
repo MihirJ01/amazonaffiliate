@@ -28,20 +28,30 @@ export const importAmazonProductWithPlaywright = createServerFn({ method: "POST"
     const remoteServiceUrl = process.env.PLAYWRIGHT_SERVICE_URL;
     const remoteServiceSecret = process.env.PLAYWRIGHT_SERVICE_SECRET;
     if (remoteServiceUrl && remoteServiceSecret) {
-      const response = await fetch(`${remoteServiceUrl.replace(/\/$/, "")}/import`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${remoteServiceSecret}`,
-        },
-        body: JSON.stringify({ affiliateUrl: data.affiliateUrl }),
-      });
-      const result = await response.json();
-      if (!response.ok)
-        throw new Error(
-          result.error ?? "Your laptop Playwright service could not import this product.",
-        );
-      return result as ImportedAmazonProduct;
+      try {
+        const response = await fetch(`${remoteServiceUrl.replace(/\/$/, "")}/import`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${remoteServiceSecret}`,
+          },
+          body: JSON.stringify({ affiliateUrl: data.affiliateUrl }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            result.error ?? "Your laptop Playwright service could not import this product.",
+          );
+        }
+        return result as ImportedAmazonProduct;
+      } catch (error) {
+        if (error instanceof TypeError && /fetch failed/i.test(error.message)) {
+          throw new Error(
+            "Vercel cannot reach your laptop Playwright service. Keep the laptop service and Cloudflare tunnel running, update PLAYWRIGHT_SERVICE_URL with the current HTTPS tunnel URL, then redeploy.",
+          );
+        }
+        throw error;
+      }
     }
     let source: URL;
     try {
